@@ -1,0 +1,24 @@
+steps:
+  # Install dependencies
+  - name: python:3.9
+    entrypoint: pip
+    args: ["install", "-r", "requirements.txt", "-t", "/workspace/lib"]
+    
+  # Deploy to Cloud Run
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'xrb8-joaquinquiroga-prototype1-backendd'  # your service name
+      - '--source'
+      - '.'
+      - '--region'
+      - 'us-central1'  # your desired region
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--port'
+      - '8080'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
