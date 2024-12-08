@@ -135,7 +135,8 @@ async def download_and_convert_image(url: str, tokenAddress: str):
     except Exception as e:
         print(f"Error processing image {url}: {str(e)}")
         return None
-    
 
-
-            
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.getenv("PORT", 8080))
+    uvicorn.run(app, host="0.0.0.0", port=port)
