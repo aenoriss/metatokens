@@ -2,7 +2,7 @@ const functions = require('firebase-functions');
 const axios = require('axios');
 
 // You should store this in 
-const API_KEY = functions.config().fastapi.key;;
+const API_KEY = functions.config().fastapi.key;
 const API_URL = functions.config().fastapi.cleanendpoint;
 
 exports.cleanTokens = functions.pubsub
