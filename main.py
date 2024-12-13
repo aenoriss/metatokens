@@ -136,6 +136,8 @@ async def clean_tokens_index(auth: HTTPAuthorizationCredentials = Security(verif
         if should_delete:
             tokens_ref.child(address).delete()
 
+    return {"message": "Tokens index cleaned"}
+
 async def download_and_convert_image(url: str, tokenAddress: str):
     try:
         await asyncio.sleep(0.1)

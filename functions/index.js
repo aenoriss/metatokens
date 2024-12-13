@@ -1,10 +1,6 @@
 const functions = require('firebase-functions');
 const axios = require('axios');
 
-// You should store this in 
-const API_KEY = functions.config().fastapi.key;
-const API_URL = functions.config().fastapi.cleanendpoint;
-
 exports.cleanTokens = functions.pubsub
     .schedule('every 1 minutes')
     .timeZone('UTC')
@@ -12,16 +8,12 @@ exports.cleanTokens = functions.pubsub
         try {
             const response = await axios({
                 method: 'put',
-                url: API_URL,
+                url: "https://xrb8-joaquinquiroga-prototype1-backendd-28244255329.us-central1.run.app/cleanTokensIndex",
                 headers: {
-                    'Authorization': `Bearer ${API_KEY}`,
+                    'Authorization': `Bearer ${"APIKEYUWU17"}`,
                     'Content-Type': 'application/json'
                 }
             });
-
-            console.log("API_URL", API_URL)
-            console.log("API_KEY", API_KEY)
-
             console.log('FastAPI response:', response.data);
             return null;
         } catch (error) {
