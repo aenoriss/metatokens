@@ -14,13 +14,14 @@ from firebase_admin import db
 import asyncio
 import time
 from fastapi import FastAPI, HTTPException, Security, Depends
-from fastapi.security import APIKeyHeader
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from google.cloud import secretmanager
 import os
 
 app = FastAPI()
 http_client = httpx.AsyncClient()
 load_dotenv()
+auth_scheme = HTTPBearer()
 
 cred = credentials.Certificate(os.getenv('FIREBASE_CREDENTIALS_PATH'))
 
@@ -41,15 +42,14 @@ def get_secret():
     return response.payload.data.decode("UTF-8")
 
 API_KEY = get_secret()
-API_KEY_HEADER = APIKeyHeader(name="X-API-Key")
 
-async def verify_api_key(api_key: str = Security(API_KEY_HEADER)):
-    if api_key != API_KEY:
+async def verify_api_key(auth: HTTPAuthorizationCredentials = Security(auth_scheme)):
+    if auth.credentials != API_KEY:
         raise HTTPException(
             status_code=403,
-            detail="Invalid API key"
+            detail="Invalid token"
         )
-    return api_key
+    return auth.credentials
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -122,7 +122,7 @@ async def get_tokens():
     return tokens
 
 @app.put("/cleanTokensIndex")
-async def clean_tokens_index(api_key: str = Depends(verify_api_key)):
+async def clean_tokens_index(auth: HTTPAuthorizationCredentials = Security(auth_scheme)):
     tokens_ref = db.reference('/tokens')
     tokens = tokens_ref.order_by_child('creationDate').get()
 
