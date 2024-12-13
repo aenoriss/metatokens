@@ -13,6 +13,10 @@ from datetime import datetime
 from firebase_admin import db
 import asyncio
 import time
+from fastapi import FastAPI, HTTPException, Security, Depends
+from fastapi.security import APIKeyHeader
+from google.cloud import secretmanager
+import os
 
 app = FastAPI()
 http_client = httpx.AsyncClient()
@@ -29,6 +33,23 @@ firebase_admin.initialize_app(cred, {
     "messagingSenderId": "534370711592",
     "appId": "1:534370711592:web:a76ba4da337d343ec29d1d"
 })
+
+def get_secret():
+    client = secretmanager.SecretManagerServiceClient()
+    name = f"projects/xrb-proto-1/secrets/API_KEY/versions/latest"
+    response = client.access_secret_version(request={"name": name})
+    return response.payload.data.decode("UTF-8")
+
+API_KEY = get_secret()
+API_KEY_HEADER = APIKeyHeader(name="X-API-Key")
+
+async def verify_api_key(api_key: str = Security(API_KEY_HEADER)):
+    if api_key != API_KEY:
+        raise HTTPException(
+            status_code=403,
+            detail="Invalid API key"
+        )
+    return api_key
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -101,7 +122,7 @@ async def get_tokens():
     return tokens
 
 @app.put("/cleanTokensIndex")
-async def clean_tokens_index():
+async def clean_tokens_index(api_key: str = Depends(verify_api_key)):
     tokens_ref = db.reference('/tokens')
     tokens = tokens_ref.order_by_child('creationDate').get()
 
@@ -123,7 +144,6 @@ async def clean_tokens_index():
             
         if should_delete:
             tokens_ref.child(address).delete()
-            deleted_count += 1
 
 async def download_and_convert_image(url: str, tokenAddress: str):
     try:
