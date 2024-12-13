@@ -13,14 +13,11 @@ from datetime import datetime
 from firebase_admin import db
 import asyncio
 import time
-from fastapi import FastAPI, HTTPException, Security, Depends
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import os
 
 app = FastAPI()
 http_client = httpx.AsyncClient()
 load_dotenv()
-auth_scheme = HTTPBearer()
 
 cred = credentials.Certificate(os.getenv('FIREBASE_CREDENTIALS_PATH'))
 
@@ -104,16 +101,8 @@ async def get_tokens():
     tokens = tokens_ref.get() or {}
     return tokens
 
-async def verify_api_key(auth: HTTPAuthorizationCredentials = Security(auth_scheme)):
-    if auth.credentials != "APIKEYUWU17":
-        raise HTTPException(
-            status_code=403,
-            detail="Invalid or missing API key"
-        )
-    return auth.credentials
-
 @app.put("/cleanTokensIndex")
-async def clean_tokens_index(auth: HTTPAuthorizationCredentials = Security(verify_api_key)):
+async def clean_tokens_index():
     tokens_ref = db.reference('/tokens')
     tokens = tokens_ref.order_by_child('creationDate').get()
 
@@ -170,8 +159,6 @@ async def download_and_convert_image(url: str, tokenAddress: str):
         blob.make_public()
 
         return blob.public_url
-
-
     
     except Exception as e:
         print(f"Error processing image {url}: {str(e)}")
