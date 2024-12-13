@@ -51,7 +51,7 @@ def root():
     return {"message": "Hello World"}
 
 @app.get("/updateTokensIndex")
-async def get_tokens():
+async def updateTokensIndex():
     tokens_ref = db.reference('/tokens')
      
     existing_tokens = tokens_ref.get() or {}
