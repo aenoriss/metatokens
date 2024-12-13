@@ -12,6 +12,7 @@ from urllib.parse import urlparse
 from datetime import datetime
 from firebase_admin import db
 import asyncio
+import time
 
 app = FastAPI()
 http_client = httpx.AsyncClient()
@@ -71,6 +72,8 @@ async def get_tokens():
                     token["name"] = pair_data["pairs"][0]["baseToken"]["name"]
                     token["symbol"] = pair_data["pairs"][0]["baseToken"]["symbol"]
                     token["dexId"] = pair_data["pairs"][0]["pairCreatedAt"]
+                    token["price"] = pair_data["pairs"][0]["priceUsd"]
+                    token["priceChange"] = pair_data["pairs"][0]["priceChange"]
                     token["creationDate"] = pair_data["pairs"][0]["pairCreatedAt"]
                 else:
                     print(f"Failed to fetch pair data for {token_address}")
@@ -97,6 +100,30 @@ async def get_tokens():
     tokens = tokens_ref.get() or {}
     return tokens
 
+@app.put("/cleanTokensIndex")
+async def clean_tokens_index():
+    tokens_ref = db.reference('/tokens')
+    tokens = tokens_ref.order_by_child('creationDate').get()
+
+    current_time = time.time() * 1000 
+    one_day_ago = current_time - (24 * 60 * 60 * 1000)
+
+    sorted_tokens = sorted(tokens.items(), key=lambda x: x[1]['creationDate'], reverse=True)
+
+    for address, data in sorted_tokens:
+        should_delete = False
+        
+        # Check if older than 24h
+        if data['creationDate'] < one_day_ago:
+            should_delete = True
+        
+        # Check if beyond the 300 limit
+        if sorted_tokens.index((address, data)) >= 300:
+            should_delete = True
+            
+        if should_delete:
+            tokens_ref.child(address).delete()
+            deleted_count += 1
 
 async def download_and_convert_image(url: str, tokenAddress: str):
     try:
