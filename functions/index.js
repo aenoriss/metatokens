@@ -19,6 +19,9 @@ exports.cleanTokens = functions.pubsub
                 }
             });
 
+            console.log("API_URL", API_URL)
+            console.log("API_KEY", API_KEY)
+
             console.log('FastAPI response:', response.data);
             return null;
         } catch (error) {

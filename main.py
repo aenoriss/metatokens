@@ -44,6 +44,8 @@ def get_secret():
 API_KEY = get_secret()
 
 async def verify_api_key(auth: HTTPAuthorizationCredentials = Security(auth_scheme)):
+    print("auth.credentials", auth.credentials)
+    print("API_KEY", API_KEY)
     if auth.credentials != API_KEY:
         raise HTTPException(
             status_code=403,
