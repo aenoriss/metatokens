@@ -15,7 +15,6 @@ import asyncio
 import time
 from fastapi import FastAPI, HTTPException, Security, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from google.cloud import secretmanager
 import os
 
 app = FastAPI()
@@ -34,24 +33,6 @@ firebase_admin.initialize_app(cred, {
     "messagingSenderId": "534370711592",
     "appId": "1:534370711592:web:a76ba4da337d343ec29d1d"
 })
-
-def get_secret():
-    client = secretmanager.SecretManagerServiceClient()
-    name = f"projects/xrb-proto-1/secrets/API_KEY/versions/latest"
-    response = client.access_secret_version(request={"name": name})
-    return response.payload.data.decode("UTF-8")
-
-API_KEY = get_secret()
-
-async def verify_api_key(auth: HTTPAuthorizationCredentials = Security(auth_scheme)):
-    print("auth.credentials", auth.credentials)
-    print("API_KEY", API_KEY)
-    if auth.credentials != API_KEY:
-        raise HTTPException(
-            status_code=403,
-            detail="Invalid token"
-        )
-    return auth.credentials
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -123,8 +104,16 @@ async def get_tokens():
     tokens = tokens_ref.get() or {}
     return tokens
 
+async def verify_api_key(auth: HTTPAuthorizationCredentials = Security(auth_scheme)):
+    if auth.credentials != "APIKEYUWU17":
+        raise HTTPException(
+            status_code=403,
+            detail="Invalid or missing API key"
+        )
+    return auth.credentials
+
 @app.put("/cleanTokensIndex")
-async def clean_tokens_index(auth: HTTPAuthorizationCredentials = Security(auth_scheme)):
+async def clean_tokens_index(auth: HTTPAuthorizationCredentials = Security(verify_api_key)):
     tokens_ref = db.reference('/tokens')
     tokens = tokens_ref.order_by_child('creationDate').get()
 
