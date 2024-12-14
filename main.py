@@ -49,27 +49,33 @@ def root():
 
 @app.get("/updateTokensIndex")
 async def updateTokensIndex():
-
-    await clean_tokens_index();
+    await clean_tokens_index()
 
     tokens_ref = db.reference('/tokens')
      
     existing_tokens = tokens_ref.get() or {}
+    current_token_count = len(existing_tokens)
+    
+    slots_available = 250 - current_token_count
+    
+    if slots_available <= 0:
+        return {"message": "Token limit reached (250), no new tokens added"}
+        
     existing_addresses = set(token.get('tokenAddress') for token in existing_tokens.values() if token.get('tokenAddress'))
     
     response = await http_client.get("https://api.dexscreener.com/token-profiles/latest/v1")
 
     if response.status_code == 200:
-
         new_tokens = {}
+        tokens_added = 0
 
         for token in response.json():
+            if tokens_added >= slots_available:
+                break
+                
             token_address = token.get('tokenAddress')
 
-            #get only new tokens on solana
             if token_address and token["chainId"] == "solana" and token_address not in existing_addresses:
-
-                #Complete token data with pair info
                 pair_data_request = await http_client.get("https://api.dexscreener.com/latest/dex/tokens/" + token_address)
                 if pair_data_request.status_code == 200:
                     pair_data = pair_data_request.json()
@@ -79,20 +85,25 @@ async def updateTokensIndex():
                     token["price"] = pair_data["pairs"][0]["priceUsd"]
                     token["priceChange"] = pair_data["pairs"][0]["priceChange"]
                     token["creationDate"] = pair_data["pairs"][0]["pairCreatedAt"]
+                    
+                    logo_url = await download_and_convert_image(token.get("icon"), token.get("tokenAddress"))
+                    if logo_url:
+                        token["icon"] = logo_url
+
+                    new_tokens[token_address] = token
+                    tokens_added += 1
                 else:
                     print(f"Failed to fetch pair data for {token_address}")
-
-                #Convert logo webp image to PNG and save it in storage
-                logo_url = await download_and_convert_image(token.get("icon"), token.get("tokenAddress"))
-
-                if(logo_url):
-                    token["icon"] = logo_url
-
-                new_tokens[token_address] = token
 
         if new_tokens:
             print(f"Adding {len(new_tokens)} new tokens")
             tokens_ref.update(new_tokens)
+            return {
+                "message": f"Added {len(new_tokens)} new tokens",
+                "current_total": current_token_count + len(new_tokens)
+            }
+        else:
+            return {"message": "No new tokens to add"}
                 
     else:
         return {"error": f"Failed to fetch data: {response.status_code}"}
