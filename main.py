@@ -114,30 +114,42 @@ async def get_tokens():
     return tokens
 
 async def clean_tokens_index():
-    tokens_ref = db.reference('/tokens')
-    tokens = tokens_ref.order_by_child('creationDate').get()
+    try:
+        tokens_ref = db.reference('/tokens')
+        tokens = tokens_ref.order_by_child('creationDate').get()
 
-    current_time = time.time() * 1000 
-    one_day_ago = current_time - (24 * 60 * 60 * 1000)
+        if not tokens:
+            print("No tokens found in database")
+            return {"message": "No tokens to clean"}
 
-    sorted_tokens = sorted(tokens.items(), key=lambda x: x[1]['creationDate'], reverse=True)
+        current_time = time.time() * 1000 
+        one_day_ago = current_time - (24 * 60 * 60 * 1000)
 
-    for address, data in sorted_tokens:
-        should_delete = False
-        
-        # Check if older than 24h
-        if data['creationDate'] < one_day_ago:
-            should_delete = True
-        
-        # Check if beyond the 300 limit
-        if sorted_tokens.index((address, data)) >= 300:
-            should_delete = True
+        sorted_tokens = sorted(tokens.items(), key=lambda x: x[1].get('creationDate', 0), reverse=True)
+
+        deleted_count = 0
+        for address, data in sorted_tokens:
+            should_delete = False
             
-        if should_delete:
-            await eliminateImage(address)
-            tokens_ref.child(address).delete()
+            if data.get('creationDate', 0) < one_day_ago:
+                should_delete = True
+            
+            if sorted_tokens.index((address, data)) >= 250:
+                should_delete = True
+                
+            if should_delete:
+                await eliminateImage(address)
+                tokens_ref.child(address).delete()
+                deleted_count += 1
 
-    return {"message": "Tokens index cleaned"}
+        return {
+            "message": f"Tokens index cleaned. Deleted {deleted_count} tokens",
+            "deleted_count": deleted_count
+        }
+        
+    except Exception as e:
+        print(f"Error cleaning tokens index: {str(e)}")
+        return {"error": f"Failed to clean tokens: {str(e)}"}
 
 async def download_and_convert_image(url: str, tokenAddress: str):
     try:
