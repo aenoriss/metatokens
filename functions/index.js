@@ -9,10 +9,7 @@ exports.cleanTokens = functions.pubsub
             const response = await axios({
                 method: 'put',
                 url: "https://xrb8-joaquinquiroga-prototype1-backendd-28244255329.us-central1.run.app/cleanTokensIndex",
-                headers: {
-                    'Authorization': `Bearer ${"APIKEYUWU17"}`,
-                    'Content-Type': 'application/json'
-                }
+        
             });
             console.log('FastAPI response:', response.data);
             return null;
