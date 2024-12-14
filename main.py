@@ -168,10 +168,15 @@ async def download_and_convert_image(url: str, tokenAddress: str):
     except Exception as e:
         print(f"Error processing image {url}: {str(e)}")
         return None
+    
+@app.on_event("shutdown")
+async def shutdown_event():
+    await http_client.aclose()
 
 if __name__ == "__main__":
     uvicorn.run(
         app,
         host="0.0.0.0",
-        port=int(os.getenv("PORT", 8080))
+        port=8080
     )
+
