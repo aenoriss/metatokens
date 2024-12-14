@@ -15,11 +15,9 @@ import time
 import os
 
 app = FastAPI()
-cred = credentials.Certificate("./firebase_key.json")
+http_client = httpx.AsyncClient()
 
-@app.on_event("shutdown")
-async def shutdown_event():
-    await http_client.aclose()
+cred = credentials.Certificate("./firebase_key.json")
 
 firebase_admin.initialize_app(cred, {
     "apiKey": "AIzaSyAniJ6mDrIlcBpgKZ1YGukVfsQTHkst6BU",
@@ -31,10 +29,17 @@ firebase_admin.initialize_app(cred, {
     "appId": "1:534370711592:web:a76ba4da337d343ec29d1d"
 })
 
-http_client = httpx.AsyncClient(
-    timeout=httpx.Timeout(30.0),
-    limits=httpx.Limits(max_keepalive_connections=5, max_connections=10)
-)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    
+    global http_client
+    http_client = httpx.AsyncClient()
+    
+    yield
+    
+    if http_client:
+        await http_client.aclose()
+
 
 @app.get("/")
 def root():
@@ -169,13 +174,10 @@ async def download_and_convert_image(url: str, tokenAddress: str):
     except Exception as e:
         print(f"Error processing image {url}: {str(e)}")
         return None
-    
-if __name__ == "__main__":
-    port = int(os.getenv("PORT", 8080))
-    uvicorn.run(
-        "main:app",  
-        host="0.0.0.0",  
-        port=port,
-        reload=False  
-    )
 
+if __name__ == "__main__":
+    uvicorn.run(
+        app,
+        host="0.0.0.0",
+        port=int(os.getenv("PORT", 8080))
+    )
