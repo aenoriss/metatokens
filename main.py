@@ -17,6 +17,10 @@ import os
 app = FastAPI()
 cred = credentials.Certificate("./firebase_key.json")
 
+@app.on_event("shutdown")
+async def shutdown_event():
+    await http_client.aclose()
+
 firebase_admin.initialize_app(cred, {
     "apiKey": "AIzaSyAniJ6mDrIlcBpgKZ1YGukVfsQTHkst6BU",
     "authDomain": "xrb-prototype1-backend.firebaseapp.com",
@@ -29,10 +33,7 @@ firebase_admin.initialize_app(cred, {
 
 http_client = httpx.AsyncClient(
     timeout=httpx.Timeout(30.0),
-    limits=httpx.Limits(max_keepalive_connections=5, max_connections=10),
-    headers={
-        "User-Agent": "YourAppName/1.0",
-    }
+    limits=httpx.Limits(max_keepalive_connections=5, max_connections=10)
 )
 
 @app.get("/")
