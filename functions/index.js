@@ -7,9 +7,8 @@ exports.cleanTokens = functions.pubsub
     .onRun(async (context) => {
         try {
             const response = await axios({
-                method: 'put',
-                url: "https://xrb8-joaquinquiroga-prototype1-backendd-28244255329.us-central1.run.app/cleanTokensIndex",
-        
+                method: 'get',
+                url: "https://xrb8-joaquinquiroga-prototype1-backendd-28244255329.us-central1.run.app/updateTokensIndex",
             });
             console.log('FastAPI response:', response.data);
             return null;
