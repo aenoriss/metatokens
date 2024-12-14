@@ -134,6 +134,7 @@ async def clean_tokens_index():
             should_delete = True
             
         if should_delete:
+            await eliminateImage(address)
             tokens_ref.child(address).delete()
 
     return {"message": "Tokens index cleaned"}
@@ -174,6 +175,27 @@ async def download_and_convert_image(url: str, tokenAddress: str):
     except Exception as e:
         print(f"Error processing image {url}: {str(e)}")
         return None
+    
+async def eliminateImage(tokenAddress: str):
+    try:
+        bucket = storage.bucket()
+        
+        blob_path = f"token_icons/{tokenAddress}.png"
+        
+        blob = bucket.blob(blob_path)
+        
+        if blob.exists():
+            blob.delete()
+            print(f"Successfully deleted image for token {tokenAddress}")
+            return True
+        else:
+            print(f"No image found for token {tokenAddress}")
+            return False
+            
+    except Exception as e:
+        print(f"Error deleting image for token {tokenAddress}: {str(e)}")
+        return False
+
 
 if __name__ == "__main__":
     uvicorn.run(
