@@ -15,8 +15,6 @@ import time
 import os
 
 app = FastAPI()
-http_client = httpx.AsyncClient()
-
 cred = credentials.Certificate("./firebase_key.json")
 
 firebase_admin.initialize_app(cred, {
