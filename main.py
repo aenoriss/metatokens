@@ -19,7 +19,7 @@ app = FastAPI()
 http_client = httpx.AsyncClient()
 load_dotenv()
 
-cred = credentials.Certificate(os.getenv('FIREBASE_CREDENTIALS_PATH'))
+cred = credentials.Certificate("./firebase_key.json")
 
 firebase_admin.initialize_app(cred, {
     "apiKey": "AIzaSyAniJ6mDrIlcBpgKZ1YGukVfsQTHkst6BU",
