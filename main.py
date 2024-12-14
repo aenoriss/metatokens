@@ -7,7 +7,6 @@ from contextlib import asynccontextmanager
 from PIL import Image
 import os
 import io
-from dotenv import load_dotenv
 from urllib.parse import urlparse
 from datetime import datetime
 from firebase_admin import db
@@ -17,7 +16,6 @@ import os
 
 app = FastAPI()
 http_client = httpx.AsyncClient()
-load_dotenv()
 
 cred = credentials.Certificate("./firebase_key.json")
 
@@ -31,17 +29,13 @@ firebase_admin.initialize_app(cred, {
     "appId": "1:534370711592:web:a76ba4da337d343ec29d1d"
 })
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    
-    global http_client
-    http_client = httpx.AsyncClient()
-    
-    yield
-    
-    if http_client:
-        await http_client.aclose()
-
+http_client = httpx.AsyncClient(
+    timeout=httpx.Timeout(30.0),
+    limits=httpx.Limits(max_keepalive_connections=5, max_connections=10),
+    headers={
+        "User-Agent": "YourAppName/1.0",
+    }
+)
 
 @app.get("/")
 def root():
