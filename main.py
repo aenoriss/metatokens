@@ -98,6 +98,7 @@ async def updateTokensIndex():
         if new_tokens:
             print(f"Adding {len(new_tokens)} new tokens")
             tokens_ref.update(new_tokens)
+            await updateTokensFinancials()
             return {
                 "message": f"Added {len(new_tokens)} new tokens",
                 "current_total": current_token_count + len(new_tokens)
@@ -107,6 +108,44 @@ async def updateTokensIndex():
                 
     else:
         return {"error": f"Failed to fetch data: {response.status_code}"}
+   
+
+async def updateTokensFinancials():
+    tokens_ref = db.reference('/tokens')
+    existing_tokens = tokens_ref.get() or {}   
+    new_tokens = {}
+    tokens_added = 0
+
+    for token_address, token_data in existing_tokens.items():
+        try:
+            pair_data_request = await http_client.get("https://api.dexscreener.com/latest/dex/tokens/" + token_address)
+            
+            if pair_data_request.status_code == 200:
+                pair_data = pair_data_request.json()
+                
+                token_data["price"] = pair_data["pairs"][0]["priceUsd"]
+                token_data["volume"] = pair_data["pairs"][0]["volume"]["h6"]
+                token_data["txns"] = pair_data["pairs"][0]["txns"]["h6"]
+                token_data["priceChange"] = pair_data["pairs"][0]["priceChange"]
+
+                new_tokens[token_address] = token_data
+                tokens_added += 1
+            else:
+                print(f"Failed to fetch pair data for {token_address}")
+
+        except Exception as e:
+            print(f"Error updating {token_address}: {str(e)}")
+            continue
+
+    if new_tokens:
+        print(f"Updating {len(new_tokens)} tokens")
+        tokens_ref.update(new_tokens)
+        return {
+            "message": f"Updated {len(new_tokens)} tokens",
+            "current_total": len(new_tokens)
+        }
+    
+    return {"message": "No tokens updated"}
 
 
 @app.get("/getTokensIndex")
