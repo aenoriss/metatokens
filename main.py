@@ -49,6 +49,9 @@ def root():
 
 @app.get("/updateTokensIndex")
 async def updateTokensIndex():
+
+    await clean_tokens_index();
+
     tokens_ref = db.reference('/tokens')
      
     existing_tokens = tokens_ref.get() or {}
@@ -101,7 +104,6 @@ async def get_tokens():
     tokens = tokens_ref.get() or {}
     return tokens
 
-@app.get("/cleanTokensIndex")
 async def clean_tokens_index():
     tokens_ref = db.reference('/tokens')
     tokens = tokens_ref.order_by_child('creationDate').get()
