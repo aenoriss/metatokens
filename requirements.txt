@@ -1,6 +1,6 @@
+python-dotenv
 fastapi
 uvicorn[standard]
 httpx==0.25.2
 firebase-admin==6.2.0
 pillow
-python-dotenv
