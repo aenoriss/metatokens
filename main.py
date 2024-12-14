@@ -81,6 +81,8 @@ async def updateTokensIndex():
                     token["symbol"] = pair_data["pairs"][0]["baseToken"]["symbol"]
                     token["dexId"] = pair_data["pairs"][0]["pairCreatedAt"]
                     token["price"] = pair_data["pairs"][0]["priceUsd"]
+                    token["volume"] = pair_data["pairs"][0]["volume"]["h6"]
+                    token["txns"] = pair_data["pairs"][0]["txns"]["h6"]
                     token["priceChange"] = pair_data["pairs"][0]["priceChange"]
                     token["creationDate"] = pair_data["pairs"][0]["pairCreatedAt"]
                     
