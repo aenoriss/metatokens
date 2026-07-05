@@ -8,7 +8,7 @@ using Newtonsoft.Json;
 
 public class LeonardoAPI : MonoBehaviour
 {
-   private const string API_KEY = "d326c183-8415-4922-b6ce-908b89ace75f";
+   private const string API_KEY = "YOUR_LEONARDO_API_KEY";
    private const string BASE_URL = "https://cloud.leonardo.ai/api/rest/v1/generations";
    private List<GeneratedImage> currentImages = new List<GeneratedImage>();
    private string generationID;
