@@ -9,7 +9,7 @@ using System.Collections.Generic;
 
 public class StabilityAPI : MonoBehaviour
 {
-    private const string API_KEY = "sk-7G7J6YCPmysA6dzvwXMYR3vuVI3kkYOQxPSdX230xsTVJDeE";
+    private const string API_KEY = "YOUR_STABILITY_API_KEY";
     private const string BASE_URL = "https://api.stability.ai/v2beta/3d/stable-fast-3d";
 
     [SerializeField] private Transform spawnPoint;
