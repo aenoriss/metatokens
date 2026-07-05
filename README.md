@@ -58,7 +58,7 @@ pip install -r requirements.txt
 uvicorn main:app --reload   # or gunicorn, see Procfile
 ```
 
-You need a Firebase project and a `firebase_key.json` service-account credential in `backend/`, plus your own Firebase config values. The Cloud Function under `backend/functions` deploys with `firebase deploy --only functions` and calls the deployed service URL on a schedule.
+You need a Firebase project and a `firebase_key.json` service-account credential in `backend/`, plus your own Firebase config values. The Cloud Function under `backend/functions` deploys through the Firebase CLI (`firebase deploy`, scoped to functions) and calls the deployed service URL on a schedule.
 
 Unity: open `unity/` in Unity 2022.3.20f1 and build to a Quest headset (hand tracking required).
 
