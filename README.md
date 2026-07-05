@@ -31,6 +31,13 @@ flowchart LR
 
 **The visual encoding.** The Unity work I cared about is in `TokenManager.cs`, where the numbers turn into geometry. Volume runs through a log10 scale (clamped 1 to 5,000,000) and drives the particle emission rate, speed, size, and orbital velocity. A busy token churns; a dead one barely moves. Price change picks the color and, past a few thresholds, swaps the body material from deep red through vivid green. The buy/sell balance feeds a custom ring shader as a single `_BuyRatio` float. It is a pile of hand-tuned lerps, dialed so the mapping reads at a glance in VR.
 
+```mermaid
+flowchart LR
+  V[6h volume] -->|log10 scale| PA[particle rate, speed, size]
+  P[price change] --> M[body color and material]
+  B[buy/sell ratio] --> R[ring shader _BuyRatio]
+```
+
 **Focus by carousel slot.** The carousel shows five tokens. `SetObjectTransparency` fades each one by its slot: the center stays fully opaque, its neighbors sit at half alpha, and the outer two drop to a fifth. The result reads like depth of field, pulling your eye to the watched token. Scrolling is hand-driven too, with `CoinDisplayManager` following the tracked hand's pointer and shifting the ring once a horizontal drag passes a small threshold.
 
 ## Tech stack
