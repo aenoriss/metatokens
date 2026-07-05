@@ -16,7 +16,17 @@ Reading a token's momentum off a table of numbers is slow, and a wall of charts 
 
 ## How it works
 
-The data path is split in two. A scheduled job keeps a shared, bounded index warm in the cloud. The headset reads that once, then polls only the token you are looking at.
+Market data makes a full trip from an API to a token you can grab in VR. It gets fetched, reduced to a few market signals, and those signals drive the shader and particle parameters that render each token.
+
+```mermaid
+flowchart LR
+  DS[DexScreener API] --> FE[Fetch: scheduled enrich + live poll]
+  FE --> SG[Compute signals: price, volume, buy/sell]
+  SG --> PP[Shader + particle parameters]
+  PP --> RV[Rendered token in the carousel]
+```
+
+**The polling split.** The retrieval side runs on two tiers: a shared cloud index the headset reads once, and a direct live poll for the one token you are watching.
 
 ```mermaid
 flowchart LR
@@ -27,16 +37,17 @@ flowchart LR
   Q -->|watched token, ~1 Hz| DS
 ```
 
-**The polling split.** A Firebase Cloud Function pings the FastAPI service once a minute. The service pulls the latest Solana token profiles. For each new one it makes a second DexScreener call for the financials, grabs the icon, transcodes it from WebP to PNG, and drops it in Firebase Storage. The index is capped at 250 tokens and evicts anything older than 24 hours, so it stays small. The Quest app loads that whole index once from `/getTokensIndex` and builds the carousel. After that, only the centered token costs anything: `APIManager` polls DexScreener directly at about 1 Hz for its price, volume, and transaction balance. Everything else is only as fresh as the last cron run.
+A Firebase Cloud Function pings the FastAPI service once a minute. The service pulls the latest Solana token profiles. For each new one it makes a second DexScreener call for the financials, grabs the icon, transcodes it from WebP to PNG, and drops it in Firebase Storage. The index is capped at 250 tokens and evicts anything older than 24 hours, so it stays small. The Quest app loads that whole index once from `/getTokensIndex` and builds the carousel. After that, only the centered token costs anything: `APIManager` polls DexScreener directly at about 1 Hz for its price, volume, and transaction balance. Everything else is only as fresh as the last cron run.
 
-**The visual encoding.** The Unity work I cared about is in `TokenManager.cs`, where the numbers turn into geometry. Volume runs through a log10 scale (clamped 1 to 5,000,000) and drives the particle emission rate, speed, size, and orbital velocity. A busy token churns; a dead one barely moves. Price change picks the color and, past a few thresholds, swaps the body material from deep red through vivid green. The buy/sell balance feeds a custom ring shader as a single `_BuyRatio` float. It is a pile of hand-tuned lerps, dialed so the mapping reads at a glance in VR.
+**The visual encoding.** The Unity work I cared about is in `TokenManager.cs`, where the numbers turn into geometry. Each market signal drives one visual channel:
 
-```mermaid
-flowchart LR
-  V[6h volume] -->|log10 scale| PA[particle rate, speed, size]
-  P[price change] --> M[body color and material]
-  B[buy/sell ratio] --> R[ring shader _BuyRatio]
-```
+| Market signal | Transform | Visual result |
+|---|---|---|
+| 6h volume | log10 scale | particle rate, speed, size |
+| price change | sign and magnitude | body color and material |
+| buy/sell ratio | `_BuyRatio` uniform | ring shader intensity |
+
+Volume is clamped to a 1 to 5,000,000 range before the log10 step, and it also sets the particles' orbital velocity, so a busy token churns while a dead one barely moves. Price change picks the color, and past a few thresholds it swaps the body material from deep red through vivid green. It is a pile of hand-tuned lerps, dialed so the mapping reads at a glance in VR.
 
 **Focus by carousel slot.** The carousel shows five tokens. `SetObjectTransparency` fades each one by its slot: the center stays fully opaque, its neighbors sit at half alpha, and the outer two drop to a fifth. The result reads like depth of field, pulling your eye to the watched token. Scrolling is hand-driven too, with `CoinDisplayManager` following the tracked hand's pointer and shifting the ring once a horizontal drag passes a small threshold.
 
