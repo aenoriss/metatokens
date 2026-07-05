@@ -30,11 +30,12 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-  CF[Firebase cron, every 1 min] --> API[FastAPI on Cloud Run]
-  API -->|pull + enrich| DS[DexScreener API]
+  CF[Firebase cron] -. every 1 min .-> API[FastAPI on Cloud Run]
+  DS[DexScreener API] -->|pull + enrich| API
   API -->|write tokens + icons| FB[(Firebase RTDB + Storage)]
-  Q[Unity Quest app] -->|GET token index| API
-  Q -->|watched token, ~1 Hz| DS
+  API -->|token index| Q[Unity Quest app]
+  FB -->|icon textures| Q
+  DS -->|watched token, ~1 Hz| Q
 ```
 
 A Firebase Cloud Function pings the FastAPI service once a minute. The service pulls the latest Solana token profiles. For each new one it makes a second DexScreener call for the financials, grabs the icon, transcodes it from WebP to PNG, and drops it in Firebase Storage. The index is capped at 250 tokens and evicts anything older than 24 hours, so it stays small. The Quest app loads that whole index once from `/getTokensIndex` and builds the carousel. After that, only the centered token costs anything: `APIManager` polls DexScreener directly at about 1 Hz for its price, volume, and transaction balance. Everything else is only as fresh as the last cron run.
