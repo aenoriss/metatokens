@@ -1,4 +1,4 @@
-<img src="assets/header.webp" alt="metatokens" width="100%">
+<img src="assets/header.webp" alt="metatokens" width="400">
 
 # MetaTokens
 
